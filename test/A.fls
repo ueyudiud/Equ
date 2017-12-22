@@ -1,0 +1,21 @@
+#def A "Hello world!"
+
+val list = new ArrayList;
+
+#ifndef A
+list += 1;
+#endif
+
+#ifdef A
+list += 2;
+#endif
+
+#undef A
+
+#ifndef A
+list -= 1;
+#endif
+
+#ifdef A
+list.clear;
+#endif
