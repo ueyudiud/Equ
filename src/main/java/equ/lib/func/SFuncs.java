@@ -3,7 +3,6 @@
  */
 package equ.lib.func;
 
-import equ.lib.func.builtin.SFuncsControl;
 import equ.lib.type.SClassLoader;
 import equ.lib.type.SType;
 import equ.lib.type.SVariableType;
@@ -13,10 +12,6 @@ import equ.lib.type.SVariableType;
  */
 public class SFuncs
 {
-	public static final SFunc
-	IF = SFuncsControl.IF,
-	WHILE = SFuncsControl.WHILE;
-	
 	public static SParameterizedFunc getParameterizedFunc(SType owner, SGenericFunc function, SType...typeParameters)
 	{
 		return new SParameterizedFuncImpl(owner, function, typeParameters);

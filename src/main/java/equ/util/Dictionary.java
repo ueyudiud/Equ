@@ -6,8 +6,12 @@ package equ.util;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author ueyudiud
@@ -158,6 +162,8 @@ public class Dictionary<E> extends AbstractMap<String, E>
 							entry2 = entry3;
 						}
 					}
+					this.entries = entries1;
+					
 					entry = new DictionaryEntry();
 					entry.current = chr;
 					entry.parent = this;
@@ -179,19 +185,43 @@ public class Dictionary<E> extends AbstractMap<String, E>
 		}
 	}
 	
+	private static final float DEFAULT_LOAD_FACTOR = 0.75F;
+	
 	private int size;
 	private float loadFactor;
 	private final DictionaryEntry root = new DictionaryEntry();
-	private Set<Entry<String, E>> set = new HashSet<>();
+	private Set<Entry<String, E>> set;
 	
 	public Dictionary()
 	{
-		this(0.75F);
+		this(DEFAULT_LOAD_FACTOR);
 	}
 	
 	public Dictionary(float loadFactor)
 	{
 		this.loadFactor = loadFactor;
+		this.set = new HashSet<>();
+	}
+	
+	public Dictionary(Map<String, ? extends E> map)
+	{
+		this.loadFactor = DEFAULT_LOAD_FACTOR;
+		this.set = new HashSet<>(((Map<String, E>) map).entrySet());
+		for (Entry<String, E> entry : this.set)
+		{
+			initalizePut(Objects.requireNonNull(entry.getKey()), entry.getValue());
+		}
+	}
+	
+	private void initalizePut(String key, E value)
+	{
+		DictionaryEntry entry = this.root;
+		final int length = key.length();
+		for (int i = 0; i < length; ++i)
+		{
+			entry = entry.childNonnull(key.charAt(i));
+		}
+		entry.setValue(value);
 	}
 	
 	@Override
@@ -265,12 +295,25 @@ public class Dictionary<E> extends AbstractMap<String, E>
 	@Override
 	public E getOrDefault(Object key, E defaultValue)
 	{
-		return key instanceof String ? get(((String) key).toCharArray(), defaultValue) : null;
+		return key instanceof String ? get(((String) key).toCharArray(), defaultValue) : defaultValue;
+	}
+	
+	public E getOrDefault(String key, E defaultValue)
+	{
+		DictionaryEntry entry = this.root;
+		final int length = key.length();
+		for (int i = 0; i < length; ++i)
+		{
+			if ((entry = entry.find(key.charAt(i))) == null)
+				return defaultValue;
+		}
+		return entry.value;
 	}
 	
 	@Override
-	public E put(String key, E value)
+	public E put(@Nonnull String key, E value)
 	{
+		Objects.requireNonNull(key);
 		DictionaryEntry entry = this.root;
 		for (int i = 0; i < key.length(); ++i)
 		{

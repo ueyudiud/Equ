@@ -12,15 +12,15 @@ import equ.util.Strings;
 /**
  * @author ueyudiud
  */
-public class Scanner
+public class Scanner implements IScanner
 {
 	private final ILiteralFactory factory;
 	
 	private final char[] buf;
 	private char C = '\n';
-	int bufidx;
-	char Cmark;
-	int bufmark = -1;
+	private int bufidx;
+	private char Cmark;
+	private int bufmark = -1;
 	
 	private char[] lbuf = new char[512];
 	private int lbufidx;
@@ -37,7 +37,7 @@ public class Scanner
 		this.factory = factory;
 	}
 	
-	public TokenType scan()
+	public LexemeTokenType scan()
 	{
 		while (this.bufidx <= this.buf.length)
 		{
@@ -47,7 +47,7 @@ public class Scanner
 			case '\t':
 			case '\f':
 				scanChar();
-				return TokenType.WHITE;
+				return LexemeTokenType.WHITE;
 			case '\r':
 				mark();
 				if (scanChar())
@@ -60,7 +60,7 @@ public class Scanner
 				if (this.macroMode)
 				{
 					this.macroMode = false;
-					return TokenType.MACRO_ENDING;
+					return LexemeTokenType.MACRO_ENDING;
 				}
 				if (scanChar())
 				{
@@ -71,49 +71,49 @@ public class Scanner
 						scanIdentifier();
 						this.identifier = new Name(new String(this.lbuf, 0, this.lbufidx));
 						this.lbufidx = 0;
-						return TokenType.MACRO;
+						return LexemeTokenType.MACRO;
 					}
 				}
 				break;
 			case '#' :
 				scanChar();
-				return TokenType.SHARP;
+				return LexemeTokenType.SHARP;
 			case '(' :
 				scanChar();
-				return TokenType.LPANC;
+				return LexemeTokenType.LPANC;
 			case '[' :
 				scanChar();
-				return TokenType.LBRACE;
+				return LexemeTokenType.LBRACE;
 			case '{' :
 				scanChar();
-				return TokenType.LBRACKET;
+				return LexemeTokenType.LBRACKET;
 			case ')' :
 				scanChar();
-				return TokenType.RPANC;
+				return LexemeTokenType.RPANC;
 			case ']' :
 				scanChar();
-				return TokenType.RBRACE;
+				return LexemeTokenType.RBRACE;
 			case '}' :
 				scanChar();
-				return TokenType.RBRACKET;
+				return LexemeTokenType.RBRACKET;
 			case ',' :
 				scanChar();
-				return TokenType.COMMA;
+				return LexemeTokenType.COMMA;
 			case '.' :
 				scanChar();
-				return TokenType.DOT;
+				return LexemeTokenType.DOT;
 			case ';' :
 				scanChar();
-				return TokenType.SEMI;
+				return LexemeTokenType.SEMI;
 			case '"' :
 				scanString();
-				return TokenType.LITERAL;
+				return LexemeTokenType.LITERAL;
 			case '\'' :
 				scanLitChar();
-				return TokenType.LITERAL;
+				return LexemeTokenType.LITERAL;
 			case '`' :
 				scanCustom();
-				return TokenType.LITERAL;
+				return LexemeTokenType.LITERAL;
 			case '0' :
 			{
 				mark();
@@ -123,15 +123,15 @@ public class Scanner
 				case 'x' : case 'X' ://Hex
 					scanChar();
 					scanHexNumber();
-					return TokenType.LITERAL;
+					return LexemeTokenType.LITERAL;
 				case 'o' : case 'O' ://Octal
 					scanChar();
 					scanOctNumber();
-					return TokenType.LITERAL;
+					return LexemeTokenType.LITERAL;
 				case 'b' : case 'B' ://Binary
 					scanChar();
 					scanBinNumber();
-					return TokenType.LITERAL;
+					return LexemeTokenType.LITERAL;
 					//				case 'r' : case 'R' ://Specific Radix
 					//
 					//					return TokenType.LITERAL;
@@ -143,7 +143,7 @@ public class Scanner
 			case '4' : case '5' : case '6' :
 			case '7' : case '8' : case '9' :
 				scanDecNumber();
-				return TokenType.LITERAL;
+				return LexemeTokenType.LITERAL;
 			case 'a' : case 'b' : case 'c' : case 'd' :
 			case 'e' : case 'f' : case 'g' : case 'h' :
 			case 'i' : case 'j' : case 'k' : case 'l' :
@@ -162,31 +162,35 @@ public class Scanner
 				this.lbufidx = 0;
 				switch (v)
 				{
-				case "return" : return TokenType.RETURN;
-				case "val" : return TokenType.VAL;
-				case "var" : return TokenType.VAR;
-				case "new" : return TokenType.NEW;
-				case "public" : return TokenType.PUBLIC;
-				case "protected" : return TokenType.PROTECTED;
-				case "private" : return TokenType.PRIVATE;
-				case "native" : return TokenType.NATIVE;
-				case "static" : return TokenType.STATIC;
-				case "template" : return TokenType.TEMPLATE;
-				case "type" : return TokenType.TYPE;
-				case "typedef" : return TokenType.TYPEDEF;
-				case "class" : return TokenType.CLASS;
-				case "enum" : return TokenType.ENUM;
-				case "object" : return TokenType.OBJECT;
-				case "this" : return TokenType.THIS;
-				case "super" : return TokenType.SUPER;
-				case "extends" : return TokenType.EXTENDS;
-				case "true" : return TokenType.TRUE;
-				case "false" : return TokenType.FALSE;
-				case "null" : return TokenType.NULL;
-				case "asm" : return TokenType.ASM;
+				case "return" : return LexemeTokenType.RETURN;
+				case "val" : return LexemeTokenType.VAL;
+				case "var" : return LexemeTokenType.VAR;
+				case "new" : return LexemeTokenType.NEW;
+				case "public" : return LexemeTokenType.PUBLIC;
+				case "protected" : return LexemeTokenType.PROTECTED;
+				case "private" : return LexemeTokenType.PRIVATE;
+				case "native" : return LexemeTokenType.NATIVE;
+				case "static" : return LexemeTokenType.STATIC;
+				case "template" : return LexemeTokenType.TEMPLATE;
+				case "type" : return LexemeTokenType.TYPE;
+				case "typedef" : return LexemeTokenType.TYPEDEF;
+				case "class" : return LexemeTokenType.CLASS;
+				case "enum" : return LexemeTokenType.ENUM;
+				case "object" : return LexemeTokenType.OBJECT;
+				case "this" : return LexemeTokenType.THIS;
+				case "super" : return LexemeTokenType.SUPER;
+				case "extends" : return LexemeTokenType.EXTENDS;
+				case "if" : return LexemeTokenType.IF;
+				case "else" : return LexemeTokenType.ELSE;
+				case "while" : return LexemeTokenType.WHILE;
+				case "do" : return LexemeTokenType.DO;
+				case "true" : this.literal = new Literal(LitType.BOOL, true); return LexemeTokenType.LITERAL;
+				case "false" : this.literal = new Literal(LitType.BOOL, false); return LexemeTokenType.LITERAL;
+				case "null" : this.literal = new Literal(LitType.NULL, null); return LexemeTokenType.LITERAL;
+				case "asm" : return LexemeTokenType.ASM;
 				default:
 					this.identifier = new Name(v);
-					return TokenType.IDENTIFIER;
+					return LexemeTokenType.IDENTIFIER;
 				}
 			case '<' :
 				mark();
@@ -195,7 +199,7 @@ public class Scanner
 					if (this.C == '|')
 					{
 						scanChar();
-						return TokenType.LNAMING;
+						return LexemeTokenType.LNAMING;
 					}
 					reset();
 				}
@@ -203,9 +207,9 @@ public class Scanner
 				String value = new String(this.lbuf, 0, this.lbufidx);
 				this.lbufidx = 0;
 				if ("<:".equals(value))
-					return TokenType.TYPE_LOWER;
+					return LexemeTokenType.TYPE_LOWER;
 				this.identifier = new Name(value);
-				return TokenType.IDENTIFIER;
+				return LexemeTokenType.OPERATOR;
 			case '|' :
 				mark();
 				if (scanChar())
@@ -213,7 +217,7 @@ public class Scanner
 					if (this.C == '>')
 					{
 						scanChar();
-						return TokenType.RNAMING;
+						return LexemeTokenType.RNAMING;
 					}
 					reset();
 				}
@@ -222,9 +226,9 @@ public class Scanner
 				value = new String(this.lbuf, 0, this.lbufidx);
 				this.lbufidx = 0;
 				if (value.equals(">:"))
-					return TokenType.TYPE_GREATER;
+					return LexemeTokenType.TYPE_GREATER;
 				this.identifier = new Name(value);
-				return TokenType.IDENTIFIER;
+				return LexemeTokenType.OPERATOR;
 			case '~' : case '!' : case '%' :
 			case '^' : case '&' : case '*' :
 			case ':' : case '+' : case '-' :
@@ -232,26 +236,30 @@ public class Scanner
 				scanOperator();
 				this.identifier = new Name(new String(this.lbuf, 0, this.lbufidx));
 				this.lbufidx = 0;
-				return TokenType.IDENTIFIER;
+				return LexemeTokenType.OPERATOR;
 			default :
 				if (Character.isLetter(this.C))
 				{
 					scanIdentifier();
+					LexemeTokenType type = isOperator(this.lbuf[this.lbufidx - 1]) ||
+							(this.lbufidx == 2 &&
+							(this.lbuf[0] == 'i' || this.lbuf[0] == 'a') && this.lbuf[1] == 's') ?
+									LexemeTokenType.OPERATOR : LexemeTokenType.IDENTIFIER;
 					this.identifier = new Name(new String(this.lbuf, 0, this.lbufidx));
 					this.lbufidx = 0;
-					return TokenType.IDENTIFIER;
+					return type;
 				}
 				else if (Character.isDigit(this.C))
 				{
 					scanDecNumber();
-					return TokenType.LITERAL;
+					return LexemeTokenType.LITERAL;
 				}
 				else if (isOperator(this.C))
 				{
 					scanOperator();
 					this.identifier = new Name(new String(this.lbuf, 0, this.lbufidx));
 					this.lbufidx = 0;
-					return TokenType.IDENTIFIER;
+					return LexemeTokenType.OPERATOR;
 				}
 				else
 				{
@@ -260,7 +268,7 @@ public class Scanner
 				break;
 			}
 		}
-		return TokenType.END;
+		return LexemeTokenType.END;
 	}
 	
 	/**

@@ -25,13 +25,15 @@ public class Literal
 	
 	public static enum LitType
 	{
-		INT,
-		LONG,
-		FLOAT,
-		DOUBLE,
-		CHAR,
-		STRING,
+		INT,//Integer
+		LONG,//Long
+		FLOAT,//Float
+		DOUBLE,//Double
+		CHAR,//Character
+		STRING,//String
 		CNUMBER,
-		CNAMING;
+		CNAMING,
+		NULL,
+		BOOL;
 	}
 }

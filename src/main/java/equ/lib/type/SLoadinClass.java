@@ -73,21 +73,9 @@ class SLoadinClass<T> implements SClass
 		}
 		else if (type instanceof SParameterizedType)
 		{
-			if (type.getRawClass() instanceof SClass)
+			if (type.getRawClass() instanceof SLoadinClass<?>)
 			{
-				SClass class1 = (SClass) type.getRawClass();
-				if (class1.isInterface())
-				{
-					return GS.any(getGenericInterfaces(), type::convertFrom);
-				}
-				SType type1 = this;
-				do
-				{
-					if (type1.getRawClass() == class1)
-						return type1.convert(type);
-				}
-				while ((type1 = type1.getSupertype()) != null);
-				return false;
+				return ((SLoadinClass<?>) type.getRawClass()).clazz.isAssignableFrom(this.clazz);
 			}
 			else return false;//Array or Pointer
 		}
