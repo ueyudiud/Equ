@@ -80,7 +80,7 @@ public interface SParameterizedDeclearation<D extends SGenericDeclearation, D1 e
 	default SType $transformVariableType(SVariableType<?> type)
 	{
 		SVariableType<?>[] types = getRawDeclearation().getTypeParameters();
-		int i = GS.indexOf(types, type);
+		int i = GS.lastIndexOf(types, type);
 		if (i != -1)
 		{
 			return getActualTypeArguments()[i];

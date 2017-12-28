@@ -118,7 +118,7 @@ class STypeMethodImpl implements STypeMethod
 			return this;
 		
 		return $transformTo(t -> {
-			int idx = GS.indexOf(this.parameters, t);
+			int idx = GS.lastIndexOf(this.parameters, t);
 			if (idx != -1)
 				return parameters[idx];
 			return t;

@@ -29,7 +29,7 @@ public interface SGenericDeclearation<D extends SDeclearation> extends SDecleara
 	@Override
 	default SType $transformVariableType(SVariableType<?> type)
 	{
-		if (GS.indexOf(getTypeParameters(), type) != -1)
+		if (GS.lastIndexOf(getTypeParameters(), type) != -1)
 			return type;
 		else
 		{

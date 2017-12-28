@@ -76,12 +76,21 @@ public class GS
 		return true;
 	}
 	
-	public static int indexOf(Object[] array, Object arg)
+	public static int lastIndexOf(Object[] array, Object arg)
 	{
 		int i = array.length;
 		while (--i >= 0)
 			if (Objects.equals(array[i], arg))
 				break;
 		return i;
+	}
+	
+	public static int indexOf(char[] array, int from, int to, char arg)
+	{
+		int i = from;
+		while (i < to)
+			if (array[i] == arg)
+				return i;
+		return -1;
 	}
 }
