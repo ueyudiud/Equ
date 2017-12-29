@@ -4,6 +4,10 @@
 
 import org.objectweb.asm.Opcodes;
 
+import equ.compiler.IScanner;
+import equ.compiler.IScannerFactory;
+import equ.compiler.ScannerFactories;
+
 /**
  * @author ueyudiud
  */
@@ -11,37 +15,39 @@ public class Debug implements Opcodes
 {
 	public static void main(String[] args) throws Throwable
 	{
-		final int[] map = {0, 1, 4, 4, 5};
-		for (int idx = 0; idx < 10; ++idx)
+		IScannerFactory factory = ScannerFactories.fileFactory("D:\\Program Files\\EquJ\\Equ\\test");
+		IScanner scanner = factory.openSource(null, "A.fls");
+		label: for (;;)
 		{
-			int low = 0;
-			int high = map.length - 1;
-			while (low < high)
+			scanner.scan();
+			switch (scanner.type())
 			{
-				int mid = ((low + high + 1) >>> 1);
-				int midVal = map[mid];
-				if (midVal > idx)
-				{
-					if (low == mid - 1)
-						break;
-					high = mid - 1;
-				}
-				else if (midVal < idx)
-					low = mid;
-				else
-				{
-					low = mid;
-					break;
-				}
+			case END :
+				break label;
+			case IDENTIFIER :
+			case OPERATOR :
+				System.out.println(scanner.ident().name);
+				break;
+			case COMMENT_BLOCK :
+			case COMMENT_DOC :
+			case COMMENT_LINE :
+				System.out.println(scanner.com().comments);
+				break;
+			case LITERAL :
+				System.out.println(scanner.lit().value);
+				break;
+			default:
+				System.out.println(scanner.type());
+				break;
 			}
-			System.out.println(map[low]);
 		}
+		factory.closeScanner(scanner);
 		//		FileReader reader = new FileReader("D:\\Program Files\\EquJ\\Equ\\test\\A.fls");
 		//		char[] buf = IOUtil.readFully(reader);
 		//		ReaderPreoperator preoperator = new ReaderPreoperator(new FileReader("D:\\Program Files\\EquJ\\Equ\\test\\A.fls"));
 		//		StreamLexer lexer = new StreamLexer(preoperator.preoperate());
 		//		lexer.lexeralize().forEach(System.out::println);
-		//		System.exit(0);
+		System.exit(0);
 		//		SClassLoader loader = STypeLoaders.simple(true);
 		//		SClass class1 = loader.loadClass("java.util.List");
 		//		System.out.println(Arrays.toString(

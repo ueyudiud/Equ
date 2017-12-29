@@ -131,6 +131,7 @@ class FileScanner extends AbstractScanner
 			case '\t':
 			case '\f':
 				this.prevPos = this.pos;
+				poll();
 				continue;
 			case '\r':
 				if (peek() == '\n')
@@ -140,6 +141,11 @@ class FileScanner extends AbstractScanner
 				return;
 			case '#' :
 				skipAndSetType(LexType.SHARP);
+				return;
+			case '@' :
+				poll();
+				scanIdentifier();
+				this.type = LexType.ATTRIBUTE;
 				return;
 			case ',' :
 				skipAndSetType(LexType.COMMA);
@@ -223,6 +229,26 @@ class FileScanner extends AbstractScanner
 			case '7' : case '8' : case '9' :
 				scanDecNumber();
 				return;
+			case '\'':
+				poll();
+				scanCharacter();
+				return;
+			case '\"':
+			{
+				int pos0 = this.pos;
+				if (poll() == '\"' && poll() == '\"')
+				{
+					poll();
+					scanMultiString();
+				}
+				else
+				{
+					this.pos = pos0;
+					poll();
+					scanString();
+				}
+				return;
+			}
 			case 'a' : case 'b' : case 'c' : case 'd' :
 			case 'e' : case 'f' : case 'g' : case 'h' :
 			case 'i' : case 'j' : case 'k' : case 'l' :
@@ -295,11 +321,15 @@ class FileScanner extends AbstractScanner
 	{
 		if (scanId(true))
 		{
+			if (this.ibufPos == 0)
+				error("identifier.empty");
 			this.type = LexType.OPERATOR;
 			this.ident = new Identifier(pop());
 		}
 		else
 		{
+			if (this.ibufPos == 0)
+				error("identifier.empty");
 			String value = pop();
 			switch (value)
 			{
@@ -638,6 +668,125 @@ class FileScanner extends AbstractScanner
 		this.type = LexType.LITERAL;
 	}
 	
+	private void scanMultiString()
+	{
+		while (!scanEscapeChar('\0', true))
+		{
+			if (this.C == '"')
+			{
+				int pos1 = this.pos;
+				if (poll() == '"' && poll() == '"')
+				{
+					break;
+				}
+				else
+				{
+					this.pos = pos1;
+					this.C = '"';
+				}
+			}
+			store();
+		}
+		this.type = LexType.LITERAL;
+		this.lit = new Literal(LiteralType.STRING, pop());
+	}
+	
+	private void scanString()
+	{
+		while (!scanEscapeChar('\"', false))
+		{
+			store();
+			poll();
+		}
+		if (this.C != '\"')
+			error("string.missing.limit");
+		poll();
+		this.type = LexType.LITERAL;
+		this.lit = new Literal(LiteralType.STRING, pop());
+	}
+	
+	private void scanCharacter()
+	{
+		if (scanEscapeChar('\'', false))
+			error("character.illegal.limit");
+		store();
+		if (poll() != '\'')
+			error("character.missing.limit");
+		this.type = LexType.LITERAL;
+		this.lit = new Literal(LiteralType.CHAR, this.ibuf[0]);
+		this.ibufPos = 0;
+	}
+	
+	private boolean scanEscapeChar(char exclude, boolean enableEnter)
+	{
+		if (this.C == '\\')
+		{
+			int i;
+			switch (poll())
+			{
+			case 'f' : this.C = '\f'; break;
+			case 'r' : this.C = '\r'; break;
+			case 'n' : this.C = '\n'; break;
+			case '\'': this.C = '\''; break;
+			case '\"': this.C = '\"'; break;
+			case '\\': this.C = '\\'; break;
+			case '0' : case '1' : case '2' : case '3' :
+				i = this.C - '0';
+				switch (peek())
+				{
+				case '0' : case '1' : case '2' : case '3' :
+				case '4' : case '5' : case '6' : case '7' :
+					poll();
+					i = i << 4 | this.C - '0';
+					switch (peek())
+					{
+					case '0' : case '1' : case '2' : case '3' :
+					case '4' : case '5' : case '6' : case '7' :
+						poll();
+						i = i << 4 | this.C - '0';
+					}
+				}
+				this.C = (char) i;
+				break;
+			case '4' : case '5' : case '6' : case '7' :
+				i = this.C - '0';
+				switch (peek())
+				{
+				case '0' : case '1' : case '2' : case '3' :
+				case '4' : case '5' : case '6' : case '7' :
+					poll();
+					i = i << 4 | this.C - '0';
+				}
+				this.C = (char) i;
+				break;
+			default :
+				error("escape.unknown.control");
+			}
+			return false;
+		}
+		else if (this.C == EOF)
+		{
+			error("missing.char.limit");
+			return false;
+		}
+		else if (!enableEnter)
+		{
+			switch (this.C)
+			{
+			case '\r' :
+			case '\n' :
+				error("illegal.char");
+				return false;
+			default:
+				return this.C == exclude;
+			}
+		}
+		else
+		{
+			return this.C == exclude;
+		}
+	}
+	
 	private void scanLineComment()
 	{
 		while (this.pos < this.buf.length)
@@ -924,6 +1073,10 @@ class FileScanner extends AbstractScanner
 	
 	private char peek()
 	{
+		if (this.pos >= this.buf.length)
+		{
+			return EOF;
+		}
 		if (this.enableEscape && this.buf[this.pos] == '\\' && this.pos + 1 < this.buf.length && this.buf[this.pos + 1] == 'u')
 		{
 			return (char) (
@@ -932,11 +1085,15 @@ class FileScanner extends AbstractScanner
 					escapeDigit(this.buf[this.pos + 2]) <<  4 |
 					escapeDigit(this.buf[this.pos + 2])       );
 		}
-		return this.pos < this.buf.length ? this.buf[this.pos] : EOF;
+		return this.buf[this.pos];
 	}
 	
 	private char poll()
 	{
+		if (this.pos >= this.buf.length)
+		{
+			return this.C = EOF;
+		}
 		if (this.enableEscape && this.buf[this.pos] == '\\' && this.pos + 1 < this.buf.length && this.buf[this.pos + 1] == 'u')
 		{
 			this.pos += 6;
@@ -946,7 +1103,7 @@ class FileScanner extends AbstractScanner
 					escapeDigit(this.buf[this.pos - 1]) <<  4 |
 					escapeDigit(this.buf[this.pos    ])       );
 		}
-		return this.C = this.pos < this.buf.length ? this.buf[this.pos ++] : EOF;
+		return this.C = this.buf[this.pos ++];
 	}
 	
 	private void skip()
@@ -1049,7 +1206,7 @@ class FileScanner extends AbstractScanner
 			int pos = this.linemap[ln];
 			int pos2;
 			return new SourcePosition(this.fileName, ln + 1, idx - pos + 1, this.buf, pos,
-					ln + 1 == this.linemap.length ? this.buf.length : this.buf[(pos2 = this.linemap[ln + 1] - 1)] == '\r' ? pos2 - 1 : pos2);
+					ln + 1 == this.linemap.length ? this.buf.length : this.buf[(pos2 = this.linemap[ln + 1] - 1)] == '\r' ? pos2 - 2 : pos2 - 1);
 		}
 	}
 	

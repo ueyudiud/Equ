@@ -35,7 +35,7 @@ public class SourcePosition
 		return "at " + this.path + " ln: " + this.ln + " col: " + this.col;
 	}
 	
-	public void getCode(PrintStream stream)
+	public void printCode(PrintStream stream)
 	{
 		if (this.col == -1)
 			stream.println("<unknown source code>");

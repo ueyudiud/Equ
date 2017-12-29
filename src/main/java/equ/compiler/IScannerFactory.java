@@ -3,16 +3,21 @@
  */
 package equ.compiler;
 
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * @author ueyudiud
  */
 public interface IScannerFactory
 {
-	IScanner openSource(IScanner scanner, String path);
+	@Nonnull IScanner openSource(@Nullable IScanner scanner, @Nonnull String path) throws IOException;
 	
-	void closeScanner(IScanner scanner);
+	void closeScanner(@Nonnull IScanner scanner);
 	
-	void warn(IScanner scanner, String cause, Object... formats);
+	void warn(@Nonnull IScanner scanner, @Nonnull String cause, Object... formats);
 	
-	void error(IScanner scanner, String cause, Object... formats);
+	void error(@Nonnull IScanner scanner, @Nonnull String cause, Object... formats);
 }
