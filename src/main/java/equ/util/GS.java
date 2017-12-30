@@ -40,6 +40,17 @@ public class GS
 		return idx;
 	}
 	
+	public static <E> int getOrDefault(List<E> list, Predicate<? super E> predicate)
+	{
+		final int size = list.size();
+		for (int i = 0; i < size; ++i)
+		{
+			if (predicate.test(list.get(i)))
+				return i;
+		}
+		return -1;
+	}
+	
 	public static <E> boolean all(E[] elements, Predicate<E> predicate)
 	{
 		for (E e : elements)

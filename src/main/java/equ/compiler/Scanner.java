@@ -17,10 +17,10 @@ abstract class AbstractScanner implements IScanner
 	protected static final char EOF = '\0';
 	
 	protected final IScannerFactory factory;
-	protected LexType type;
-	protected Identifier ident;
-	protected Literal lit;
-	protected Comment comment;
+	protected LexType type = LexType.NL;
+	protected Identifier ident = null;
+	protected Literal lit = null;
+	protected Comment comment = null;
 	
 	AbstractScanner(IScannerFactory factory)
 	{
@@ -75,16 +75,28 @@ abstract class AbstractScanner implements IScanner
 		return this.comment;
 	}
 	
-	@Override
 	public void warn(String cause, Object... formats)
 	{
 		this.factory.warn(this, cause, formats);
 	}
 	
-	@Override
 	public void error(String cause, Object... formats)
 	{
 		this.factory.error(this, cause, formats);
+	}
+	
+	SourcePosition errPos;
+	
+	@Override
+	public void setErrPos(SourcePosition pos)
+	{
+		this.errPos = pos;
+	}
+	
+	@Override
+	public SourcePosition err()
+	{
+		return this.errPos == null ? new SourcePosition("<unknown file>", 0, -1, new char[0], 0, 0) : this.errPos;
 	}
 }
 
@@ -123,13 +135,21 @@ class FileScanner extends AbstractScanner
 	public void scan()
 	{
 		this.prevPos = this.pos;
-		while (this.pos < this.buf.length)
+		while (this.pos <= this.buf.length)
 		{
 			switch (this.C)
 			{
+			case EOF :
+				this.type = LexType.END;
+				return;
 			case ' ' :
 			case '\t':
 			case '\f':
+			case '\1' : case '\2' : case '\3' : case '\4' :
+			case '\5' : case '\6' : case '\7' : case '\10':
+			case '\16': case '\17': case '\21': case '\22':
+			case '\23': case '\25': case '\26': case '\27':
+			case '\30': case '\31': case '\33': case '\177':
 				this.prevPos = this.pos;
 				poll();
 				continue;
@@ -187,23 +207,19 @@ class FileScanner extends AbstractScanner
 				skipAndSetType(LexType.RBRACKET);
 				return;
 			case '<' :
-				skip();
 				if (peek() == '|')
 				{
 					skipAndSetType(LexType.LNAMING);
 					return;
 				}
-				store('<');
 				scanOperator();
 				return;
 			case '|' :
-				skip();
 				if (peek() == '>')
 				{
 					skipAndSetType(LexType.RNAMING);
 					return;
 				}
-				store('|');
 				scanOperator();
 				return;
 			case '0' :
@@ -286,23 +302,45 @@ class FileScanner extends AbstractScanner
 			case '~' : case '!' : case '%' :
 			case '^' : case '&' : case '*' :
 			case ':' : case '+' : case '-' :
-			case '=' : case '?' :
+			case '=' : case '?' : case '>' :
 				scanOperator();
 				return;
 			default :
-				if (Character.isJavaIdentifierStart(this.C))
+				if (this.C < '\u0080')
 				{
-					scanIdentifier();
-					return;
-				}
-				else if (isOperator(this.C))
-				{
-					scanOperator();
-					return;
+					error("illegal.character");
 				}
 				else
 				{
-					error("illegal.character");
+					char high = scanSurrogate();
+					int i;
+					if (high == 0)
+					{
+						i = high;
+					}
+					else
+					{
+						i = Character.toCodePoint(high, this.C);
+					}
+					if (Character.isJavaIdentifierStart(i))
+					{
+						scanIdentifier();
+						return;
+					}
+					else if (isOperator(i))
+					{
+						scanOperator();
+						return;
+					}
+					else if (Character.isWhitespace(i))
+					{
+						poll();
+						continue;
+					}
+					else
+					{
+						error("illegal.character");
+					}
 				}
 				break;
 			}
@@ -887,7 +925,7 @@ class FileScanner extends AbstractScanner
 		warn("comment.no.ending");
 	}
 	
-	private static boolean isOperator(char chr)
+	private static boolean isOperator(int chr)
 	{
 		switch (chr)
 		{
@@ -959,7 +997,7 @@ class FileScanner extends AbstractScanner
 						poll();
 						break;
 					}
-					char high = scanSurrogate(this.C);
+					char high = scanSurrogate();
 					if (high != 0)
 					{
 						store(high);
@@ -989,7 +1027,7 @@ class FileScanner extends AbstractScanner
 		return false;
 	}
 	
-	private char scanSurrogate(char chr)
+	private char scanSurrogate()
 	{
 		if (this.enableUTF16 && Character.isHighSurrogate(this.C))
 		{
@@ -1032,8 +1070,28 @@ class FileScanner extends AbstractScanner
 				}
 				break;
 			default:
+				if (this.C < '\u0080')
+					return;
+				char high = scanSurrogate();
+				if (high != 0)
+				{
+					store(high);
+					if (isOperator(Character.toCodePoint(high, this.C)))
+					{
+						store(this.C);
+						poll();
+					}
+					else
+					{
+						this.ibufPos --;
+						return;
+					}
+					continue;
+				}
 				if (isOperator(this.C))
+				{
 					break;
+				}
 				else if (Character.isIdentifierIgnorable(this.C))
 				{
 					poll();
@@ -1043,7 +1101,7 @@ class FileScanner extends AbstractScanner
 			case '~' : case '!' : case '%' :
 			case '^' : case '&' : case '*' :
 			case ':' : case '+' : case '-' :
-			case '=' : case '?' :
+			case '=' : case '?' : case '>' :
 			}
 			store();
 			poll();
@@ -1081,9 +1139,9 @@ class FileScanner extends AbstractScanner
 		{
 			return (char) (
 					escapeDigit(this.buf[this.pos + 2]) << 12 |
-					escapeDigit(this.buf[this.pos + 2]) <<  8 |
-					escapeDigit(this.buf[this.pos + 2]) <<  4 |
-					escapeDigit(this.buf[this.pos + 2])       );
+					escapeDigit(this.buf[this.pos + 3]) <<  8 |
+					escapeDigit(this.buf[this.pos + 4]) <<  4 |
+					escapeDigit(this.buf[this.pos + 5])       );
 		}
 		return this.buf[this.pos];
 	}
@@ -1110,7 +1168,7 @@ class FileScanner extends AbstractScanner
 	{
 		if (this.enableEscape && this.buf[this.pos] == '\\' && this.pos + 1 < this.buf.length && this.buf[this.pos + 1] == 'u')
 			this.pos += 6;
-		else
+		else if (this.pos < this.buf.length)
 			++this.pos;
 	}
 	
@@ -1211,6 +1269,20 @@ class FileScanner extends AbstractScanner
 	}
 	
 	@Override
+	public void warn(String cause, Object... formats)
+	{
+		this.errPos = current();
+		super.warn(cause, formats);
+	}
+	
+	@Override
+	public void error(String cause, Object... formats)
+	{
+		this.errPos = current();
+		super.error(cause, formats);
+	}
+	
+	@Override
 	public SourcePosition current()
 	{
 		return resolvePosition(this.currentPos);
@@ -1220,5 +1292,11 @@ class FileScanner extends AbstractScanner
 	public SourcePosition previous()
 	{
 		return resolvePosition(this.prevPos);
+	}
+	
+	@Override
+	public SourcePosition err()
+	{
+		return this.errPos == null ? new SourcePosition(this.fileName, 0, -1, new char[0], 0, 0) : this.errPos;
 	}
 }

@@ -49,7 +49,7 @@ class FileScannerFactory implements IScannerFactory
 		File file = new File(this.scanners.getOrDefault(scanner, this.root), path);
 		char[] codes = IOUtil.readFully(new FileReader(file));
 		IScanner result = new FileScanner(file.getAbsolutePath(), codes, true, this);
-		this.scanners.put(result, file);
+		this.scanners.put(result, file.getParentFile());
 		return result;
 	}
 	
@@ -79,13 +79,13 @@ class FileScannerFactory implements IScannerFactory
 	public void warn(IScanner scanner, String cause, Object... formats)
 	{
 		this.errors.computeIfAbsent(scanner, FileScannerFactory::newlist)
-		.add(new Error(false, scanner.current(), cause, formats));
+		.add(new Error(false, scanner.err(), cause, formats));
 	}
 	
 	@Override
 	public void error(IScanner scanner, String cause, Object... formats)
 	{
 		this.errors.computeIfAbsent(scanner, FileScannerFactory::newlist)
-		.add(new Error(true, scanner.current(), cause, formats));
+		.add(new Error(true, scanner.err(), cause, formats));
 	}
 }

@@ -1,5 +1,7 @@
 #def A "Hello world!"
 
+#include "B.fls"
+
 val list = new ArrayList;
 
 #ifndef A
@@ -16,6 +18,6 @@ list += 2;
 list -= 1;
 #endif
 
-#ifdef A
+#ifndef A
 list.clear;
 #endif

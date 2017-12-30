@@ -30,11 +30,11 @@ public interface IScanner
 	
 	Comment com();
 	
-	void warn(String cause, Object...formats);
-	
-	void error(String cause, Object...formats);
-	
 	SourcePosition current();
 	
 	SourcePosition previous();
+	
+	void setErrPos(SourcePosition pos);
+	
+	SourcePosition err();
 }

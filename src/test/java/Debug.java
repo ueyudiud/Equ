@@ -6,6 +6,7 @@ import org.objectweb.asm.Opcodes;
 
 import equ.compiler.IScanner;
 import equ.compiler.IScannerFactory;
+import equ.compiler.Parsers;
 import equ.compiler.ScannerFactories;
 
 /**
@@ -16,7 +17,8 @@ public class Debug implements Opcodes
 	public static void main(String[] args) throws Throwable
 	{
 		IScannerFactory factory = ScannerFactories.fileFactory("D:\\Program Files\\EquJ\\Equ\\test");
-		IScanner scanner = factory.openSource(null, "A.fls");
+		IScanner scanner = (IScanner) Parsers.simple(factory, "a.fls");
+		
 		label: for (;;)
 		{
 			scanner.scan();
@@ -42,11 +44,6 @@ public class Debug implements Opcodes
 			}
 		}
 		factory.closeScanner(scanner);
-		//		FileReader reader = new FileReader("D:\\Program Files\\EquJ\\Equ\\test\\A.fls");
-		//		char[] buf = IOUtil.readFully(reader);
-		//		ReaderPreoperator preoperator = new ReaderPreoperator(new FileReader("D:\\Program Files\\EquJ\\Equ\\test\\A.fls"));
-		//		StreamLexer lexer = new StreamLexer(preoperator.preoperate());
-		//		lexer.lexeralize().forEach(System.out::println);
 		System.exit(0);
 		//		SClassLoader loader = STypeLoaders.simple(true);
 		//		SClass class1 = loader.loadClass("java.util.List");
