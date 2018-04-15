@@ -1,0 +1,11 @@
+native void synchronized(Ref)({});
+
+abstract virtual class Ref extends Bot {
+	native func:Int hashCode;
+}
+
+native @attribute(FIELD, LOCAL_VARIABLE) synchronized {
+	native;
+	
+	Bool isSynchronized = true;
+}

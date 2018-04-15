@@ -1,0 +1,6 @@
+#ifndef GLOBAL_EHS
+#def GLOBAL_EHS
+
+#def __EQU_VERSION__ 201802
+
+#endif

@@ -1,0 +1,13 @@
+class Object extends Ref {
+	native func:StringAppend +(String);
+	
+	final native func:Class<|ThisType|> getClass;
+	
+	func:String toString = getClass.toString + "@" + hashCode;
+	
+	native void wait();
+	
+	native void wait(Long);
+	
+	native void wait(Long, Int);
+}

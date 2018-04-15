@@ -1,9 +1,10 @@
 /*
- * copyright© 2017 ueyudiud
+ * copyright© 2018 ueyudiud
  */
 package equ.util;
 
-import java.io.CharArrayWriter;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -12,20 +13,43 @@ import java.io.Reader;
  */
 public class IOUtil
 {
-	private static final char[] CACHE = new char[4096];
+	private static final char[] CHAR_BUF = new char[8192];
 	
-	public static char[] readFully(Reader reader) throws IOException
+	public static char[] read(File file) throws IOException
 	{
-		CharArrayWriter writer = new CharArrayWriter();
-		synchronized (CACHE)
+		return read(65536, new FileReader(file));
+	}
+	
+	public static char[] read(Reader reader) throws IOException
+	{
+		return read(65536, reader);
+	}
+	
+	private static char[] read(int initalizeSize, Reader reader) throws IOException
+	{
+		char[] array = new char[initalizeSize];
+		int length = 0;
+		int size;
+		synchronized (CHAR_BUF)
 		{
-			int len;
-			while ((len = reader.read(CACHE)) > 0)
+			while ((size = reader.read(CHAR_BUF)) != -1)
 			{
-				writer.write(CACHE, 0, len);
+				if (size + length > array.length)
+				{
+					char[] a1 = new char[array.length << 1];
+					System.arraycopy(array, 0, a1, 0, length);
+					array = a1;
+				}
+				System.arraycopy(CHAR_BUF, 0, array, length, size);
+				length += size;
 			}
 		}
-		reader.close();
-		return writer.toCharArray();
+		if (length != array.length)
+		{
+			char[] a1 = new char[length];
+			System.arraycopy(array, 0, a1, 0, length);
+			array = a1;
+		}
+		return array;
 	}
 }

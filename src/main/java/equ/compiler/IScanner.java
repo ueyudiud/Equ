@@ -1,5 +1,5 @@
 /*
- * copyright© 2017 ueyudiud
+ * copyright© 2018 ueyudiud
  */
 package equ.compiler;
 
@@ -8,33 +8,9 @@ package equ.compiler;
  */
 public interface IScanner
 {
-	IScannerFactory getFactory();
+	String path();
 	
-	void scan();
+	ILexeme lexeme();
 	
-	void mark();
-	
-	void reset();
-	
-	LexType type();
-	
-	void setIdent(Identifier identifier);
-	
-	Identifier ident();
-	
-	void setLit(Literal literal);
-	
-	Literal lit();
-	
-	void setCom(Comment comment);
-	
-	Comment com();
-	
-	SourcePosition current();
-	
-	SourcePosition previous();
-	
-	void setErrPos(SourcePosition pos);
-	
-	SourcePosition err();
+	void next() throws ScannerException;
 }

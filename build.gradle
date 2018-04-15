@@ -28,6 +28,7 @@ dependencies {
     compile 'com.google.guava:guava:23.0'
     compile 'org.ow2.asm:asm-debug-all:5.2'
     compile 'commons-cli:commons-cli:1.4'
+    compile 'org.antlr:antlr4-runtime:4.7.1'
 }
 
 task jar2(type: Jar, dependsOn: 'jar') {

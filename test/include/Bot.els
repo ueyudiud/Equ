@@ -1,0 +1,11 @@
+#warn __INFO__(Hello world!)
+
+abstract virtual class Bot {
+	abstract func:StringAppend +(String);
+	
+	abstract func:Class<|ThisType|> getClass;
+
+	abstract func:Int hashCode;
+	
+	abstract func:String toString;
+}

@@ -1,0 +1,1 @@
+class A(Int c, val:Float a = 0, var:Int b = 0) extends B(a, b), C

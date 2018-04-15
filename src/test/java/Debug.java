@@ -1,54 +1,22 @@
 /*
- * copyright© 2017 ueyudiud
+ * copyright© 2018 ueyudiud
  */
 
-import org.objectweb.asm.Opcodes;
+import java.io.File;
 
-import equ.compiler.IScanner;
-import equ.compiler.IScannerFactory;
-import equ.compiler.Parsers;
-import equ.compiler.ScannerFactories;
+import equ.compiler.FileCompileFactory;
 
 /**
  * @author ueyudiud
  */
-public class Debug implements Opcodes
+public class Debug
 {
 	public static void main(String[] args) throws Throwable
 	{
-		IScannerFactory factory = ScannerFactories.fileFactory("D:\\Program Files\\EquJ\\Equ\\test");
-		IScanner scanner = (IScanner) Parsers.simple(factory, "a.fls");
-		
-		label: for (;;)
-		{
-			scanner.scan();
-			switch (scanner.type())
-			{
-			case END :
-				break label;
-			case IDENTIFIER :
-			case OPERATOR :
-				System.out.println(scanner.ident().name);
-				break;
-			case COMMENT_BLOCK :
-			case COMMENT_DOC :
-			case COMMENT_LINE :
-				System.out.println(scanner.com().comments);
-				break;
-			case LITERAL :
-				System.out.println(scanner.lit().value);
-				break;
-			default:
-				System.out.println(scanner.type());
-				break;
-			}
-		}
-		factory.closeScanner(scanner);
+		FileCompileFactory factory = new FileCompileFactory();
+		File file = new File("D:\\Program Files\\EquJ\\Equ\\test");
+		factory.compile(new File(file, "include"), new File(file, "lib"));
 		System.exit(0);
-		//		SClassLoader loader = STypeLoaders.simple(true);
-		//		SClass class1 = loader.loadClass("java.util.List");
-		//		System.out.println(Arrays.toString(
-		//		GS.transform(STypes.INT.getFunctions(), SFunc::toString, String.class)));
 	}
 }
 
